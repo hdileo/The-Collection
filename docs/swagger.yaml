@@ -1,0 +1,470 @@
+openapi: 3.0.0
+
+info:
+  title: The Collection API
+  version: 1.0.0
+  description: Video game collection tracker API
+
+servers:
+  - url: http://localhost:3000
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    UserSignup:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          example: testuser
+        email:
+          type: string
+          example: test@email.com
+        password:
+          type: string
+          example: Password123!
+
+    UserLogin:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          example: test@email.com
+        password:
+          type: string
+          example: Password123!
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: jwt.token.here
+
+    Game:
+      type: object
+      required: [title, genre, platform, releaseYear]
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Elden Ring
+        genre:
+          type: string
+          example: RPG
+        platform:
+          type: string
+          example: PC
+        releaseYear:
+          type: integer
+          example: 2022
+
+    GameInput:
+      type: object
+      required: [title, genre, platform, releaseYear]
+      properties:
+        title:
+          type: string
+          example: Elden Ring
+        genre:
+          type: string
+          example: RPG
+        platform:
+          type: string
+          example: PC
+        releaseYear:
+          type: integer
+          example: 2022
+
+    Collection:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        gameId:
+          type: integer
+        status:
+          type: string
+          example: playing
+        hoursPlayed:
+          type: integer
+          example: 10
+
+    CollectionInput:
+      type: object
+      required: [gameId, status]
+      properties:
+        gameId:
+          type: integer
+          example: 1
+        status:
+          type: string
+          example: playing
+        hoursPlayed:
+          type: integer
+          example: 10
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        gameId:
+          type: integer
+        rating:
+          type: integer
+          example: 9
+        comment:
+          type: string
+          example: Amazing game
+        createdAt:
+          type: string
+          format: date-time
+
+    ReviewInput:
+      type: object
+      required: [gameId, rating, comment]
+      properties:
+        gameId:
+          type: integer
+        rating:
+          type: integer
+          example: 9
+        comment:
+          type: string
+          example: GOTY contender
+
+security:
+  - bearerAuth: []
+
+paths:
+
+# =========================
+# AUTH
+# =========================
+
+  /api/auth/signup:
+    post:
+      summary: Register new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSignup'
+      responses:
+        "201":
+          description: User created successfully
+        "400":
+          description: Missing or invalid fields
+        "409":
+          description: User already exists
+
+  /api/auth/login:
+    post:
+      summary: Login user and receive JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        "400":
+          description: Missing credentials
+        "401":
+          description: Invalid credentials
+
+# =========================
+# GAMES
+# =========================
+
+  /api/games:
+    get:
+      summary: Get all games
+      security: []
+      responses:
+        "200":
+          description: List of games
+
+    post:
+      summary: Create game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameInput'
+      responses:
+        "201":
+          description: Game created
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /api/games/{id}:
+    get:
+      summary: Get game by ID
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Game found
+        "400":
+          description: Invalid ID
+        "404":
+          description: Game not found
+
+    put:
+      summary: Update game
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameInput'
+      responses:
+        "200":
+          description: Game updated
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+        "404":
+          description: Game not found
+
+    delete:
+      summary: Delete game
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Game deleted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Game not found
+
+# =========================
+# COLLECTIONS
+# =========================
+
+  /api/collections:
+    get:
+      summary: Get logged-in user's collection
+      responses:
+        "200":
+          description: Collection retrieved
+        "401":
+          description: Unauthorized
+
+    post:
+      summary: Add game to collection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionInput'
+      responses:
+        "201":
+          description: Added to collection
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+        "409":
+          description: Game already in collection
+
+  /api/collections/{id}:
+    get:
+      summary: Get single collection item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Found
+        "400":
+          description: Invalid ID
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden (not owner)
+        "404":
+          description: Not found
+
+    put:
+      summary: Update collection item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionInput'
+      responses:
+        "200":
+          description: Updated
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
+    delete:
+      summary: Remove from collection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
+# =========================
+# REVIEWS
+# =========================
+
+  /api/reviews:
+    get:
+      summary: Get all reviews
+      security: []
+      responses:
+        "200":
+          description: List of reviews
+
+    post:
+      summary: Create review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewInput'
+      responses:
+        "201":
+          description: Review created
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+        "409":
+          description: Already reviewed
+
+  /api/reviews/{id}:
+    get:
+      summary: Get review by ID
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Found
+        "404":
+          description: Not found
+
+    put:
+      summary: Update review (owner only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewInput'
+      responses:
+        "200":
+          description: Updated
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden (not owner)
+        "404":
+          description: Not found
+
+    delete:
+      summary: Delete review (owner only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
