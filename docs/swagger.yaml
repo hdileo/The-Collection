@@ -6,7 +6,7 @@ info:
   description: Video game collection tracker API
 
 servers:
-  - url: http://localhost:3000
+  - url: https://the-collection-pqps.onrender.com/
 
 components:
   securitySchemes:
